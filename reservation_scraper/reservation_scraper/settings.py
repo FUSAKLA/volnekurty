@@ -31,6 +31,7 @@ NEWSPIDER_MODULE = 'reservation_scraper.spiders'
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED=False
+COOKIES_DEBUG=True
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED=False
@@ -46,6 +47,7 @@ NEWSPIDER_MODULE = 'reservation_scraper.spiders'
 #SPIDER_MIDDLEWARES = {
 #    'reservation_scraper.middlewares.MyCustomSpiderMiddleware': 543,
 #}
+
 
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
