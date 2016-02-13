@@ -1,0 +1,1 @@
+For now all you need is Python 2 and Scrapy
