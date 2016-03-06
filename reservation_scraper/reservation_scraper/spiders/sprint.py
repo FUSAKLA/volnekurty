@@ -7,7 +7,7 @@ Created on Fri Feb 12 18:46:46 2016
 
 import scrapy
 
-from reservation_scraper.items import ReservationScraperItem
+#from reservation_scraper.items import ReservationScraperItem
 
 import datetime
 import urllib
@@ -91,6 +91,7 @@ class SprintSpider(scrapy.Spider):
         end_datetime = act_date.replace(hour=end_hour, minute=end_minute)
         return start_datetime, end_datetime
         
+
         
 
                     

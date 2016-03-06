@@ -55,8 +55,8 @@ class ClassicSpider(scrapy.Spider):
         end_datetime = act_date.replace(hour=end_hour, minute=end_minute)
         return start_datetime, end_datetime
         
-        
 
+        
                     
         
             
