@@ -12,6 +12,7 @@ from scrapy.utils.response import open_in_browser
 from scrapy.selector import HtmlXPathSelector
 
 
+
 import datetime
 import urllib
 import json
@@ -27,7 +28,7 @@ headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0' ,
             'Content-Type': 'application/x-www-form-urlencoded',
             }
-
+            
 opening_hour = 7
 
 
@@ -40,12 +41,13 @@ class JehniceSpider(scrapy.Spider):
     
     
     def parse(self, response):
-        url = 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces'
-        yield scrapy.Request(url, callback=self.request_view_state, meta={'cookiejar': 1}, headers = headers)
+        for i,start_date in enumerate(self.get_start_days()):
+            url = 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces?d='+start_date.strftime('%d.%m.%Y')
+            yield scrapy.Request(url, callback=self.request_view_state, meta={'cookiejar': i}, headers = headers)
     
     def request_view_state(self, response):
-        url = 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces'
-        yield scrapy.Request(url, callback=self.request_weeks, headers = headers,dont_filter=True)
+        url = 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces?d='+response.url.split('=')[-1]
+        yield scrapy.Request(url, callback=self.request_weeks, headers = headers,dont_filter=True, meta={'cookiejar': response.meta['cookiejar']})
     
     
     def request_weeks(self, response):
@@ -59,16 +61,17 @@ class JehniceSpider(scrapy.Spider):
                 "javax.faces.ViewState":view_state
                 }
         payload["scheduleNavigForm:schedule_calendarInputCurrentDate"] = '{dt.month}/{dt.year}'.format(dt = datetime.datetime.now())
-        for start_date in self.get_start_days():
-            payload["scheduleNavigForm:schedule_calendarInputDate"] = start_date.strftime('%d.%m.%Y')
-            yield scrapy.Request(
-                'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces', 
-                self.parse_week,
-                method="POST", 
-                body=urllib.urlencode(payload),
-                headers=headers,
-                dont_filter=True
-            )
+        #for start_date in self.get_start_days():
+        payload["scheduleNavigForm:schedule_calendarInputDate"] = response.url.split('=')[-1]
+        yield scrapy.Request(
+            'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces', 
+            self.parse_week,
+            method="POST", 
+            body=urllib.urlencode(payload),
+            headers=headers,
+            dont_filter=True,
+            meta={'cookiejar': response.meta['cookiejar']}
+        )
     
     
     def parse_week(self, response):
