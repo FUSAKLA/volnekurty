@@ -8,13 +8,9 @@ Created on Fri Feb 12 18:46:46 2016
 import scrapy
 
 from reservation_scraper.items import ReservationScraperItem
-from scrapy.utils.response import open_in_browser
-from scrapy.selector import Selector
-from scrapy.selector import HtmlXPathSelector
 
 
 import datetime
-import urllib
 import json
 from bs4 import BeautifulSoup
 

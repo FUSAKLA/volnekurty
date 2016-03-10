@@ -8,16 +8,13 @@ Created on Fri Feb 12 18:46:46 2016
 import scrapy
 
 from reservation_scraper.items import ReservationScraperItem
-from scrapy.utils.response import open_in_browser
 from scrapy.selector import HtmlXPathSelector
-from scrapy.selector import Selector
-
-
 
 
 import datetime
 import urllib
 import json
+import psycopg2
 
 
 headers = {
@@ -25,8 +22,7 @@ headers = {
             'Accept-Encoding': 'gzip, deflate' ,
             'Accept-Language': 'cs,en-US;q=0.7,en;q=0.3' ,
             'Connection': 'keep-alive' ,
-            'Host': 'badminton-jehnice.e-rezervace.cz' ,
-            'Referer': 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces' ,
+            'Host': 'sportkuklenska.e-rezervace.cz' ,
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0' ,
             'Content-Type': 'application/x-www-form-urlencoded',
             }
@@ -35,22 +31,27 @@ opening_hour = 7
 NUMBER_OF_WEEKS = 3
 
 
+class SportCenterNotFound(Exception):
+    pass
 
-class JehniceSpider(scrapy.Spider):
-    name = "jehnice"
-    allowed_domains = ['badminton-jehnice.e-rezervace.cz']
+
+
+class KuklenskaSpider(scrapy.Spider):
+    name = "kuklenska"
+    allowed_domains = ['e-rezervace.cz']
     start_urls = [
-        'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces'
+        'http://sportkuklenska.e-rezervace.cz/Branch/pages/Schedule.faces'
     ]
     
     
     def parse(self, response):
+        self.sport_center_guid = self.get_sport_center_guid()
         for i,start_date in enumerate(self.get_start_days()):
-            url = 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces?d='+start_date.strftime('%d.%m.%Y')
+            url = self.start_urls[0]+'?d='+start_date.strftime('%d.%m.%Y')
             yield scrapy.Request(url, callback=self.request_view_state, meta={'cookiejar': i}, headers = headers)
     
     def request_view_state(self, response):
-        url = 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces?d='+response.url.split('=')[-1]
+        url = self.start_urls[0]+'?d='+response.url.split('=')[-1]
         yield scrapy.Request(url, callback=self.request_weeks, headers = headers,dont_filter=True, meta={'cookiejar': response.meta['cookiejar']})
     
     
@@ -59,23 +60,31 @@ class JehniceSpider(scrapy.Spider):
         payload = {
                 "AJAXREQUEST": 'scheduleNavigForm:schedule-navig-region',
                 "scheduleNavigForm:j_id227":"scheduleNavigForm:j_id227",                
-                "scheduleNavigForm:j_id232":"40001",
+                "scheduleNavigForm:j_id232":"40031",
                 "scheduleNavigForm:view_filter_menu":'horizontal_service_dayand6days',
                 "scheduleNavigForm_SUBMIT":'1',
                 "javax.faces.ViewState":view_state
                 }
         payload["scheduleNavigForm:schedule_calendarInputCurrentDate"] = '{dt.month}/{dt.year}'.format(dt = datetime.datetime.now())
-        #for start_date in self.get_start_days():
         payload["scheduleNavigForm:schedule_calendarInputDate"] = response.url.split('=')[-1]
-        yield scrapy.Request(
+        headers['Referer'] = 'http://sportkuklenska.e-rezervace.cz/Branch/pages/Schedule.faces' 
+        req = scrapy.Request(
             'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces', 
             self.parse_week,
             method="POST", 
             body=urllib.urlencode(payload),
             headers=headers,
             dont_filter=True,
-            meta={'cookiejar': response.meta['cookiejar']}
+            meta={'cookiejar': response.meta['cookiejar']},
         )
+        req.cookies['__utma']='245080538.4863447.1457455890.1457455890.1457455890.1'
+        req.cookies['__utmb']='245080538.1.10.1457455890'
+        req.cookies['__utmc']='245080538'
+        req.cookies['__utmz']='245080538.1457455890.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)'
+        req.cookies['__utmt']='1'
+        req.cookies['JSESSIONID']=response.request.headers['Cookie'].split('=')[-1]
+        
+        yield req
     
     
     def parse_week(self, response):
@@ -91,19 +100,25 @@ class JehniceSpider(scrapy.Spider):
                 start_time = ev_date+datetime.timedelta(hours=e['start'][0])
                 end_time = ev_date+datetime.timedelta(hours=e['end'][0])
                 item = ReservationScraperItem() 
-                item['start_time'] = str(start_time)
-                item['end_time'] = str(end_time)
+                item['start_time'] = start_time
+                item['end_time'] = end_time
                 item['court_number'] = court_num
-                item['reservation_type'] = 'normal'
+                item['sport_center_id'] = self.sport_center_guid
                 yield item
-
-        
-    
+   
     
     def get_start_days(self):
         return [datetime.date.today()+datetime.timedelta(days=x) for x in range(0,NUMBER_OF_WEEKS*7,7)]
     
-
+    def get_sport_center_guid(self):
+        conn = psycopg2.connect(host='localhost', database='volnekurty', user='postgres', password='Martin39')
+        cur = conn.cursor()
+        cur.execute('SELECT guid FROM reservation_data.sport_center WHERE host_name = %s',(headers['Host'],))
+        res = cur.fetchone()
+        if res:
+            return res[0]
+        else:
+            raise SportCenterNotFound('According Sport center wasn\'t found in database.')
         
 
         
