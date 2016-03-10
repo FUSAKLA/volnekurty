@@ -25,7 +25,7 @@ class ReservationScraperPipeline(object):
                     ) VALUES(%s, %s, %s, %s)
                 """, 
                 (
-                    item.get('sport_center_id'), 
+                    item.get('fk_sport_center'),
                     item.get('court_number'), 
                     item.get('start_time'), 
                     item.get('end_time')

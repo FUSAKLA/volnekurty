@@ -103,7 +103,7 @@ class KuklenskaSpider(scrapy.Spider):
                 item['start_time'] = start_time
                 item['end_time'] = end_time
                 item['court_number'] = court_num
-                item['sport_center_id'] = self.sport_center_guid
+                item['fk_sport_center'] = self.sport_center_guid
                 yield item
    
     

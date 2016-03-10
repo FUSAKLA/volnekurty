@@ -14,4 +14,4 @@ class ReservationScraperItem(scrapy.Item):
     end_time = scrapy.Field()
     court_number = scrapy.Field()
     reservation_type = scrapy.Field()
-    sport_center_id = scrapy.Field()
+    fk_sport_center = scrapy.Field()
