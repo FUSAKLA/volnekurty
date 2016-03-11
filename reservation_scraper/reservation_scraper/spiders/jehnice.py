@@ -41,6 +41,8 @@ class JehniceSpider(scrapy.Spider):
 
     def parse(self, response):
         self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
+        db_worker.remove_center_reservations(self.sport_center_guid)
+        db_worker.update_center_last_edited(self.sport_center_guid)
         for i, start_date in enumerate(self.get_start_days()):
             url = 'http://badminton-jehnice.e-rezervace.cz/Branch/pages/Schedule.faces?d=' + start_date.strftime('%d.%m.%Y')
             yield scrapy.Request(url, callback=self.request_view_state, meta={'cookiejar': i}, headers=headers)
@@ -96,7 +98,6 @@ class JehniceSpider(scrapy.Spider):
         return [datetime.date.today() + datetime.timedelta(days=x) for x in range(0, NUMBER_OF_WEEKS * 7, 7)]
     
 
-        
 
         
                     

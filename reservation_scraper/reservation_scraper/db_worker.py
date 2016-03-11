@@ -72,9 +72,23 @@ class DbWorker(object):
                     "Dane sportoviste nebylo nalezeno v databazi"
                 )
 
+    def update_center_last_edited(self, guid):
+        try:
+            self._db_cur.execute(
+                """
+                UPDATE reservation_data.sport_center
+                SET last_reservation_update = now()
+                WHERE guid = %s
+                """,
+                (guid,)
+            )
+        except psycopg2.DatabaseError as e:
+            print "Error: %s" % e
+        else:
+            self._db_connection.commit()
+
     def __del__(self):
         self._db_connection.close()
-
 
 db_worker = DbWorker()
 

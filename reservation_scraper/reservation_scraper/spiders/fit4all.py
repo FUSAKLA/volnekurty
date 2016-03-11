@@ -35,6 +35,8 @@ class Fit4AllSpider(scrapy.Spider):
 
     def start_requests(self):
         self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
+        db_worker.remove_center_reservations(self.sport_center_guid)
+        db_worker.update_center_last_edited(self.sport_center_guid)
         dates = self.get_month_days()
         for i, d in enumerate(dates):
             url = BASE_URL + d.strftime('%d.%m.%Y')
@@ -65,7 +67,7 @@ class Fit4AllSpider(scrapy.Spider):
     def get_month_days():
         return [datetime.date.today() + datetime.timedelta(days=x) for x in range(DAY_COUNT)]
 
-        
+
 
         
                     

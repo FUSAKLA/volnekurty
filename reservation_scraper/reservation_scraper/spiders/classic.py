@@ -26,6 +26,8 @@ class ClassicSpider(scrapy.Spider):
 
     def parse(self, response):
         self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
+        db_worker.remove_center_reservations(self.sport_center_guid)
+        db_worker.update_center_last_edited(self.sport_center_guid)
         dates = self.get_month_days()
         for d in dates:
             url = response.urljoin('?page=day_overview&id=29&date=' + str(d))
@@ -59,3 +61,4 @@ class ClassicSpider(scrapy.Spider):
         start_datetime = act_date.replace(hour=start_hour, minute=start_minute)
         end_datetime = act_date.replace(hour=end_hour, minute=end_minute)
         return start_datetime, end_datetime
+

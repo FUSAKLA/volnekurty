@@ -11,11 +11,11 @@ reservation_scraper/items.py
 reservation_scraper/pipelines.py
 reservation_scraper/settings.py
 reservation_scraper/spiders/__init__.py
-reservation_scraper/spiders/badmintonlisen.py
 reservation_scraper/spiders/classic.py
 reservation_scraper/spiders/fit4all.py
 reservation_scraper/spiders/ivanovice.py
 reservation_scraper/spiders/jehnice.py
 reservation_scraper/spiders/kuklenska.py
+reservation_scraper/spiders/lisen.py
 reservation_scraper/spiders/sprint.py
 reservation_scraper/spiders/zidenice.py
