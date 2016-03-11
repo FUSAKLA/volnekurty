@@ -15,7 +15,7 @@ def hello():
 
     try:
         db_cur.execute("""
-            select s.host_name,r.*
+            select s.host_name,r.court_number,r.start_time,r.end_time
             from
                 reservation_data.sport_center as s
                 join reservation_data.badminton_reservations as r on s.guid = r.fk_sport_center

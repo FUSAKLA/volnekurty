@@ -14,5 +14,3 @@ class ReservationScraperPipeline(object):
         db_worker.insert_reservation_item(item)
         return item
 
-    def __del__(self):
-        self.conn.close()
