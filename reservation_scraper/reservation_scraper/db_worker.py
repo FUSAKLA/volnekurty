@@ -1,4 +1,3 @@
-
 import psycopg2
 import db_exceptions
 
@@ -8,7 +7,12 @@ class DbWorker(object):
     _db_cur = None
 
     def __init__(self):
-        self._db_connection = psycopg2.connect(host='localhost', database='volnekurty', user='postgres', password='Martin39')
+        self._db_connection = psycopg2.connect(
+            host='localhost',
+            database='volnekurty',
+            user='postgres',
+            password='Martin39'
+        )
         self._db_cur = self._db_connection.cursor()
 
     def insert_reservation_item(self, item):
@@ -64,9 +68,13 @@ class DbWorker(object):
             if res:
                 return res[0]
             else:
-                raise db_exceptions.SportCenterNotFound("Dane sportoviste nebylo nalezeno v databazi")
+                raise db_exceptions.SportCenterNotFound(
+                    "Dane sportoviste nebylo nalezeno v databazi"
+                )
 
     def __del__(self):
         self._db_connection.close()
 
+
+db_worker = DbWorker()
 

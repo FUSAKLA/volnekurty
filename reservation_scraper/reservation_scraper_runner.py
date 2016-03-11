@@ -9,8 +9,6 @@ from scrapy.utils.project import get_project_settings
 from scrapy import signals, log
 from twisted.internet import reactor
 from scrapy.crawler import Crawler
-from reservation_scraper.spiders import *
-
 
 
 SPIDERS = [
@@ -26,7 +24,6 @@ SPIDERS = [
 
 
 class CrawlRunner:
-
     def __init__(self):
         self.running_crawlers = []
 
@@ -39,7 +36,7 @@ class CrawlRunner:
     def run(self):
         settings = get_project_settings()
         for spider in SPIDERS:
-            sp = 
+            sp =
             crawler = Crawler(spider)
             crawler_obj = spider()
             self.running_crawlers.append(sp)
@@ -52,6 +49,6 @@ class CrawlRunner:
         reactor.run()
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     cr = CrawlRunner()
     cr.run()
