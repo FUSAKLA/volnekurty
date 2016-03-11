@@ -6,7 +6,7 @@ Created on Thu Mar 10 19:05:38 2016
 """
 
 from reservation_scraper.items import ReservationScraperItem
-from reservation_scraper.reservation_scraper.db_worker import db_worker
+from reservation_scraper.db_worker import db_worker
 
 
 class ReservationScraperPipeline(object):
