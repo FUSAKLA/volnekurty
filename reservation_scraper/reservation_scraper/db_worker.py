@@ -1,5 +1,6 @@
 
 import psycopg2
+import db_exceptions
 
 
 class DbWorker(object):
@@ -59,7 +60,13 @@ class DbWorker(object):
         except psycopg2.DatabaseError as e:
             print "Error: %s" % e
         else:
-            self._db_connection.commit()
+            res = self._db_cur.fetchone()
+            if res:
+                return res[0]
+            else:
+                raise db_exceptions.SportCenterNotFound("Dane sportoviste nebylo nalezeno v databazi")
 
     def __del__(self):
         self._db_connection.close()
+
+
