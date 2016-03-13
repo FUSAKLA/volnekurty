@@ -46,7 +46,6 @@ function set_data_counter(value, counter_selector){
 function count_reservations(sport_centers){
     var count = 0;
     $.each(sport_centers, function(id,center){
-        console.log(center);
         count += parseInt(center['reservation_count'])
     });
      return count;

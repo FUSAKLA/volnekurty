@@ -36,6 +36,6 @@ def get_reservations():
 @app.route('/reservations/statistics', methods=['GET'])
 def get_reservations_statistics():
     statistics = {
-        
+
     }
     return statistics

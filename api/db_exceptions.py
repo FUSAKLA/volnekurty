@@ -1,4 +1,0 @@
-
-
-class SportCenterNotFound(Exception):
-    pass
