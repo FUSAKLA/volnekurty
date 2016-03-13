@@ -90,5 +90,6 @@ class DbWorker(object):
     def __del__(self):
         self._db_connection.close()
 
+
 db_worker = DbWorker()
 

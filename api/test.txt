@@ -1,0 +1,4 @@
+
+
+curl --data "name=test&url=pokus&opening_time=03.02.2016 06:00&closing_time=03.02.2016 06:00&description=blabla&host_name=tratratra" http://localhost:5000/centers/add
+
