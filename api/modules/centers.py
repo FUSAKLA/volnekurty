@@ -1,6 +1,8 @@
+
 from flask import request
 from model.centers import centers_db_worker
 from api import app
+from flaskext.auth.auth import login_required
 
 
 @app.route("/centers/add", methods=['POST', 'PUT'])
@@ -27,6 +29,8 @@ def remove_center():
     centers_db_worker.remove_center(request.form['guid'])
     return '{}'
 
+
 @app.route("/centers/all", methods=['GET'])
+@login_required()
 def get_centers():
     return centers_db_worker.get_centers()
