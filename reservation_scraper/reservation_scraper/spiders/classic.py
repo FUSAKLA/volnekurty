@@ -10,7 +10,7 @@ import datetime
 import scrapy
 
 from reservation_scraper.items import ReservationScraperItem
-from reservation_scraper.db_worker import db_worker
+#from reservation_scraper.db_worker import db_worker
 
 headers = {
     'Host': 'www.clubclassic.cz'
@@ -24,10 +24,13 @@ class ClassicSpider(scrapy.Spider):
         "http://rezervace.clubclassic.cz/index.php?page=day_overview&id=29"
     ]
 
+    def __init__(self):
+        self.sport_center_guid = None
+
     def parse(self, response):
-        self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
-        db_worker.remove_center_reservations(self.sport_center_guid)
-        db_worker.update_center_last_edited(self.sport_center_guid)
+        #self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
+        #db_worker.remove_center_reservations(self.sport_center_guid)
+        #db_worker.update_center_last_edited(self.sport_center_guid)
         dates = self.get_month_days()
         for d in dates:
             url = response.urljoin('?page=day_overview&id=29&date=' + str(d))

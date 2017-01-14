@@ -1,84 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Feb 12 18:46:46 2016
-
-@author: FUSAKLA
-"""
-
-import datetime
-import json
-
-import scrapy
-from bs4 import BeautifulSoup
-
-from reservation_scraper.items import ReservationScraperItem
-from reservation_scraper.db_worker import db_worker
-
-headers = {
-    'Accept': '*/*',
-    'Accept-Encoding': 'gzip, deflate',
-    'Accept-Language': 'cs,en-US;q=0.7,en;q=0.3',
-    'Connection': 'keep-alive',
-    'DNT': '1',
-    'Host': "www.badmintonlisen.cz",
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0',
-    'X-Requested-With': "XMLHttpRequest",
-    'Referer': "http://www.badmintonlisen.cz/rezervace/"
-}
-
-BASE_URL = 'http://www.badmintonlisen.cz/www/rezervace/?do=updateFormSnippet&d='
-RESERVATION_LENGTH = 30
-DAY_COUNT = 30
+from reservation_scraper.reservation_system_spiders.bizzy import BizzySpider
 
 
-class LisenSpider(scrapy.Spider):
+class LisenSpider(BizzySpider):
     name = "lisen"
-    allowed_domains = ['badmintonlisen.cz']
+    reservation_system_host = "badmintonlisen.e-rezervace.cz"
 
+    additional_ajax_payload = {
+        "scheduleNavigForm:j_id232": "41439",
+        "scheduleNavigForm:j_id227": "scheduleNavigForm:j_id227"
+    }
 
-    def start_requests(self):
-        self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
-        db_worker.remove_center_reservations(self.sport_center_guid)
-        db_worker.update_center_last_edited(self.sport_center_guid)
-        dates = self.get_month_days()
-        for i, d in enumerate(dates):
-            url = BASE_URL + d.strftime('%d.%m.%Y')
-            yield scrapy.Request(
-                url,
-                callback=self.parse_day,
-                headers=headers
-            )
-
-    def parse_day(self, response):
-        act_date = datetime.datetime.strptime(response.url.split('=')[-1], '%d.%m.%Y')
-        resp_data = json.loads(response.body)
-        html = resp_data['snippets']['snippet--resSnippet']
-        html_resp = BeautifulSoup(html, 'html.parser')
-        rows = html_resp.tbody.find_all('tr')
-        for r in rows:
-            cells = r.find_all('td')
-            time_cell = cells[0].text.strip().split(' - ')
-            start_time_cell = [int(x) for x in time_cell[0].split(':')]
-            start_time = act_date + datetime.timedelta(
-                hours=start_time_cell[0],
-                minutes=start_time_cell[1]
-            )
-            end_time_cell = [int(x) for x in time_cell[0].split(':')]
-            end_time = act_date + datetime.timedelta(
-                hours=end_time_cell[0],
-                minutes=end_time_cell[1]
-            )
-            for c_num, c in enumerate(cells[1:]):
-                input_element = c.input
-                if input_element.has_attr('checked'):
-                    item = ReservationScraperItem()
-                    item['start_time'] = str(start_time)
-                    item['end_time'] = str(end_time)
-                    item['court_number'] = c_num + 1
-                    item['fk_sport_center'] = self.sport_center_guid
-                    yield item
-
-    @staticmethod
-    def get_month_days():
-        return [datetime.date.today() + datetime.timedelta(days=x) for x in range(DAY_COUNT)]
-
+    def __init__(self):
+        super().__init__(
+            self.reservation_system_host,
+            self.additional_ajax_payload
+        )

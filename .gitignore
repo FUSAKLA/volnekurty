@@ -1,2 +1,5 @@
-.idea
+*.json
+*.html
+*.egg
 *.pyc
+build/

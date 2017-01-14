@@ -11,7 +11,7 @@ class DbWorker(object):
             host='localhost',
             database='volnekurty',
             user='postgres',
-            password='Martin39'
+            password='heslo'
         )
         self._db_cur = self._db_connection.cursor()
 
@@ -33,7 +33,7 @@ class DbWorker(object):
                 )
             )
         except psycopg2.DatabaseError as e:
-            print "Error: %s" % e
+            print("Error: {}".format(e))
         else:
             self._db_connection.commit()
 
@@ -47,7 +47,7 @@ class DbWorker(object):
                 (guid,)
             )
         except psycopg2.DatabaseError as e:
-            print "Error: %s" % e
+            print("Error: {}".format(e))
         else:
             self._db_connection.commit()
 
@@ -62,7 +62,7 @@ class DbWorker(object):
                 (host_name,)
             )
         except psycopg2.DatabaseError as e:
-            print "Error: %s" % e
+            print("Error: {}".format(e))
         else:
             res = self._db_cur.fetchone()
             if res:
@@ -83,7 +83,7 @@ class DbWorker(object):
                 (guid,)
             )
         except psycopg2.DatabaseError as e:
-            print "Error: %s" % e
+            print("Error: {}".format(e))
         else:
             self._db_connection.commit()
 
@@ -91,5 +91,5 @@ class DbWorker(object):
         self._db_connection.close()
 
 
-db_worker = DbWorker()
+#db_worker = DbWorker()
 

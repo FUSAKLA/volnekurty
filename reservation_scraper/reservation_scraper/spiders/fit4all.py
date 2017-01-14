@@ -10,7 +10,7 @@ import datetime
 import scrapy
 
 from reservation_scraper.items import ReservationScraperItem
-from reservation_scraper.db_worker import db_worker
+#from reservation_scraper.db_worker import db_worker
 
 
 headers = {
@@ -32,11 +32,14 @@ class Fit4AllSpider(scrapy.Spider):
     name = "fit4all"
     allowed_domains = ['fit4all.cz']
 
+    def __init__(self):
+        self.sport_center_guid = None
+
 
     def start_requests(self):
-        self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
-        db_worker.remove_center_reservations(self.sport_center_guid)
-        db_worker.update_center_last_edited(self.sport_center_guid)
+        #self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
+        #db_worker.remove_center_reservations(self.sport_center_guid)
+        #db_worker.update_center_last_edited(self.sport_center_guid)
         dates = self.get_month_days()
         for i, d in enumerate(dates):
             url = BASE_URL + d.strftime('%d.%m.%Y')

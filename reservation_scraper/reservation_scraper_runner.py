@@ -21,6 +21,6 @@ for spider in spiders.__all__:
         data = urllib.urlencode(values)
         req = urllib2.Request(url, data)
         resp = urllib2.urlopen(req)
-        print resp.read()
+        print(resp.read())
 
 
