@@ -1,4 +1,5 @@
-import datetime
+from datetime import datetime, timedelta
+import re
 import urllib
 
 import scrapy
@@ -34,13 +35,14 @@ class MemberProSpider(scrapy.Spider):
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0'
     }
 
-    def __init__(self, reservation_system_host, system_url_name):
+    def __init__(self, reservation_system_host, system_url_name, additional_payload):
         system_domain = ".".join(reservation_system_host.split(".")[-2:])
         self.allowed_domains = [system_domain]
         self.base_url = self.base_url_pattern.format(host=reservation_system_host, sname=system_url_name)
         self.ajax_url = self.ajax_url_pattern.format(base_url=self.base_url)
         self.headers["Host"] = reservation_system_host
         self.host = self.host_pattern.format(host=reservation_system_host, url_name=system_url_name)
+        self.additional_payload = additional_payload
 
     def start_requests(self):
         MongoDriver.delete_all_future_facility_reservations(self.host)
@@ -57,7 +59,6 @@ class MemberProSpider(scrapy.Spider):
         payload = {
             "Datepicker1": act_date,
             "HF_ID_KL_G": "0",
-            "BTN3": "Badminton+hala",
             "ToolkitScriptManager2_HiddenField": hidden_field,
             "TAB_ROZPIS_ClientState": '{"ActiveTabIndex":0,"TabState":[true]}',
             "__VIEWSTATE": viewstate,
@@ -73,6 +74,11 @@ class MemberProSpider(scrapy.Spider):
             "TB_password": "",
             "TB_password_TextBoxWatermarkExtender_ClientStatev": ""
         }
+        payload.update(self.additional_payload)
+
+        print("?????????????????????????????????????")
+        print(self.headers)
+        print("?????????????????????????????????????")
         self.headers['Referer'] = response.url
         self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
         yield scrapy.Request(
@@ -85,22 +91,36 @@ class MemberProSpider(scrapy.Spider):
         )
 
     def parse_day(self, response):
+        with open("response.html", "w") as f:
+            f.write(response.text)
         d = response.xpath('//input[@id="Datepicker1"]/@value').extract_first()
-        act_day = datetime.datetime.strptime(d, '%d.%m.%Y')
+        act_day = datetime.strptime(d, '%d.%m.%Y').date()
+        opening_hour_text = response.xpath('//td[contains(@id, "TAB_ROZPIS_TabPanel_l_1_TH")]/text()')[0].extract()
+        opening_time = date_utils.time_from_text(opening_hour_text)
+        act_datetime = datetime.combine(act_day, opening_time)
         rezervation_inputs = response.xpath('//input[@class="btnrezclose"]/@name')
         for rezervation in rezervation_inputs:
-            rez_id = rezervation.extract().split('$BTN1')[-1]
-            court_num = int(rez_id[:2]) - self.court_number_shift
-            hour = int(rez_id[2:4]) + self.hours_shift
-            minutes = self.minutes_id_mapping[rez_id[4:]]
-            start_time = act_day + datetime.timedelta(hours=hour, minutes=minutes)
-            end_time = start_time + datetime.timedelta(minutes=self.reservation_length)
+            # dont touch this, once you tried after some time and those BTN ids are black magick
+            # seriously dude... back off
+            rez_id = rezervation.extract().split('$BTN')[-1]
+            btn_id = self.parse_btn_id(rez_id)
+            court_num = int(btn_id["line_id"]) - self.court_number_shift
+            hour = int(btn_id["hour_shift"])-1
+            minutes = self.minutes_id_mapping[btn_id["hour_part"]]
+            start_time = act_datetime + timedelta(hours=hour, minutes=minutes)
+            end_time = start_time + timedelta(minutes=self.reservation_length)
             item = ReservationScraperItem()
             item['start_time'] = start_time
             item['end_time'] = end_time
             item['court_id'] = court_num
             item['facility_id'] = self.host
+            item['html_id'] = rez_id
             yield item
+
+    @staticmethod
+    def parse_btn_id(id_text):
+        id_pattern = re.compile(r"[0-9](?P<line_id>[0-9]{2})(?P<hour_shift>[0-9]{2})(?P<hour_part>[0-9]{2})")
+        return id_pattern.search(id_text).groupdict()
 
 
 

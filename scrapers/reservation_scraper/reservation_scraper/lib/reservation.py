@@ -17,17 +17,26 @@ class Reservation:
     def get_sliced_reservation_generator(self, slice_length):
         reservation_slice_length = timedelta(minutes=slice_length)
         interval_start = self.reservation_start
-        interval_end = self.reservation_start
+        interval_end = self.reservation_start + reservation_slice_length
         while interval_end <= self.reservation_end:
-            interval_end = interval_start + reservation_slice_length
             new_slice = Reservation(
                 facility_id=self.facility_id,
                 court_id=self.court_id,
-                reservation_start=self.reservation_start,
-                reservation_end=self.reservation_end
+                reservation_start=interval_start,
+                reservation_end=interval_end
             )
             interval_start += reservation_slice_length
+            interval_end += reservation_slice_length
             yield new_slice
+
+    def __repr__(self):
+        repr_pattern = "Reservation in facility: {} from: {} to: {} coutr: {}"
+        return repr_pattern.format(
+            self.facility_id,
+            self.reservation_start,
+            self.reservation_end,
+            self.court_id
+        )
 
 
 

@@ -6,9 +6,14 @@ class SprintSpider(MemberProSpider):
     reservation_system_host = "onlinememberpro.cz"
     url_name = "sprint"
 
+    additional_payload = {
+        "BTN3": "Badminton+hala",
+    }
+
     def __init__(self):
         super().__init__(
             self.reservation_system_host,
-            self.url_name
+            self.url_name,
+            self.additional_payload
         )
 

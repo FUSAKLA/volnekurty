@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import re
 import urllib
 import json
@@ -18,6 +18,8 @@ class BizzySpider(scrapy.Spider):
 
     calendar_input_day_pattern = re.compile(r"calendarInputDate=([0-9\.]+)[&\']")
     base_url_pattern = "http://{host}/Branch/pages/Schedule.faces"
+
+    reservation_length_minutes = None
 
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -70,7 +72,7 @@ class BizzySpider(scrapy.Spider):
             "scheduleNavigForm:view_filter_menu": 'horizontal_service_dayand6days',
             "scheduleNavigForm_SUBMIT": '1',
             "javax.faces.ViewState": view_state,
-            "scheduleNavigForm:schedule_calendarInputCurrentDate": '{dt.month}/{dt.year}'.format(dt=datetime.datetime.now()),
+            "scheduleNavigForm:schedule_calendarInputCurrentDate": '{dt.month}/{dt.year}'.format(dt=datetime.now()),
             "scheduleNavigForm:schedule_calendarInputDate": response.request.url.split('=')[-1]
         }
 
@@ -102,20 +104,54 @@ class BizzySpider(scrapy.Spider):
 
     def parse_week(self, response):
         xml_resp = HtmlXPathSelector(response)
-        schedule_data = xml_resp.xpath('//script[contains(text(),"scheduleData")]//text()').extract_first()[19:-4]
+        # we need to trim the "var scheduleData = " part at beginning and ";<some wierd chars>" at the end to get just the JSON
+        schedule_data = xml_resp.xpath('//script[contains(text(),"scheduleData")]//text()').extract_first().split("=", 1)[-1].rpartition(";")[0]
+        # we need to find out how small reservations can be
+        self.get_reservation_minute_length(xml_resp)
+        # we need to find out opening hour for every day(grid)
+        grid_opening_hour_map = self.get_grid_opening_hour_map(xml_resp)
         data = json.loads(schedule_data)
         str_base_date = self.calendar_input_day_pattern.search(urllib.parse.unquote(str(response.request.body))).group(1)
-        # str_base_date = urllib.parse.unquote(str(response.request.body)).split('calendarInputDate=')[1].split("'", 1)[0]
-        base_date = datetime.datetime.strptime(str_base_date, '%d.%m.%Y')
+        # starting date of the first grid
+        base_date = datetime.strptime(str_base_date, '%d.%m.%Y')
         for e in data['events']:
-            ev_date = base_date + datetime.timedelta(days=e['gridId'])
-            rows = e['end'][1] - e['start'][1]
-            for court_num in range(1, rows + 1):
-                start_time = ev_date + datetime.timedelta(hours=e['start'][0])
-                end_time = ev_date + datetime.timedelta(hours=e['end'][0])
+            # opening hour for given grid (will serve as base time to add steps)
+            grid_opening_time = grid_opening_hour_map[e['gridId']]
+            # date of the grid incremented from base_date
+            ev_date = base_date + timedelta(days=e['gridId'])
+            # counting court number
+            rows = int(e['end'][1]) - int(e['start'][1])
+            for court_num in range(1, rows + 2):
+                # base datetime for event to be incremented
+                ev_base_datetime = datetime.combine(ev_date, grid_opening_time)
+                # increment base_datetime with shift count multiplied by minut duration of reservation
+                start_time = ev_base_datetime + self.get_time_interval_from_table_shift(e['start'][0])
+                end_time = ev_base_datetime + self.get_time_interval_from_table_shift(e['end'][0] + 1)
                 item = ReservationScraperItem()
                 item['start_time'] = start_time
                 item['end_time'] = end_time
-                item['court_id'] = court_num
+                item['court_id'] = court_num + int(e['start'][1])
                 item['facility_id'] = self.host
+                item['html_id'] = e['htmlId']
+                item['rows'] = rows
                 yield item
+
+    def get_time_interval_from_table_shift(self, table_shift):
+        minutes_shift = table_shift * self.reservation_length_minutes
+        return minutes_shift
+
+    def get_reservation_minute_length(self, xml_resp):
+        if self.reservation_length_minutes:
+            return
+        heads = xml_resp.xpath('//th[contains(@class, "scheduleTimeHeader")]/text()')[:2]
+        lower_time = date_utils.time_from_text(heads[0].extract())
+        higher_time = date_utils.time_from_text(heads[1].extract())
+        self.reservation_length_minutes = date_utils.diff_two_time_objects(lower_time, higher_time)
+
+    @staticmethod
+    def get_grid_opening_hour_map(xml_resp):
+        heads = xml_resp.xpath('//tr[@class="heading"]/th[2]/text()').extract()
+        grid_opening_hour_map = []
+        for h in heads:
+            grid_opening_hour_map.append(date_utils.time_from_text(h))
+        return grid_opening_hour_map

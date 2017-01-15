@@ -42,6 +42,7 @@ class ClassicSpider(scrapy.Spider):
                     item['end_time'] = end_datetime
                     item['court_id'] = c_num + 1
                     item['facility_id'] = self.host
+                    item['html_id'] = ''
                     yield item
 
     @staticmethod

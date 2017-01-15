@@ -16,6 +16,8 @@ class MongoDriver(GenericDbDriver):
 
     @classmethod
     def insert_reservation(cls, facility_id=None, court_id=None, reservation_start=None, reservation_end=None):
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print(reservation_start, reservation_end)
         cls.reservations.insert_one({
             "facility_id": facility_id,
             "court_id": court_id,

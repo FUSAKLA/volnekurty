@@ -53,5 +53,6 @@ class Fit4AllSpider(scrapy.Spider):
                         item['end_time'] = end_time
                         item['court_id'] = c_num + 1
                         item['facility_id'] = self.host
+                        item['html_id'] = ""
                         yield item
 
