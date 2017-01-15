@@ -5,10 +5,10 @@ Created on Thu Mar 10 20:33:06 2016
 @author: FUSAKLA
 """
 
-import urllib2
 import urllib
 
-from reservation_scraper import spiders
+import urllib2
+from scrapers.reservation_scraper.reservation_scraper import spiders
 
 
 for spider in spiders.__all__:

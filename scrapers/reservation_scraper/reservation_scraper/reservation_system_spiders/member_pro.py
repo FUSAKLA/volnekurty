@@ -3,15 +3,19 @@ import urllib
 
 import scrapy
 from reservation_scraper.items import ReservationScraperItem
-#from reservation_scraper.db_worker import db_worker
+from reservation_scraper.db_driver.mongo import MongoDriver
+from reservation_scraper.utils import date_utils
+from config import config
 
 
 class MemberProSpider(scrapy.Spider):
     name = "member_pro"
+
+    day_count_to_scrape = int(config["TimeInterval"]["DayCountToScrape"])
+
     base_url_pattern = "http://www.{host}/{sname}/"
     ajax_url_pattern = "{base_url}/default.aspx"
-
-    day_count = 7
+    host_pattern = "{host}/{url_name}"
     hours_shift = 5
     reservation_length = 30
     court_number_shift = 6
@@ -31,20 +35,16 @@ class MemberProSpider(scrapy.Spider):
     }
 
     def __init__(self, reservation_system_host, system_url_name):
-        self.sport_center_guid = None
         system_domain = ".".join(reservation_system_host.split(".")[-2:])
         self.allowed_domains = [system_domain]
         self.base_url = self.base_url_pattern.format(host=reservation_system_host, sname=system_url_name)
         self.ajax_url = self.ajax_url_pattern.format(base_url=self.base_url)
         self.headers["Host"] = reservation_system_host
-
+        self.host = self.host_pattern.format(host=reservation_system_host, url_name=system_url_name)
 
     def start_requests(self):
-        #self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
-        #db_worker.remove_center_reservations(self.sport_center_guid)
-        #db_worker.update_center_last_edited(self.sport_center_guid)
-        dates = self.get_month_days()
-        for i, d in enumerate(dates):
+        MongoDriver.delete_all_future_facility_reservations(self.host)
+        for i, d in enumerate(date_utils.get_days_set(self.day_count_to_scrape)):
             url = self.base_url + '?d=' + d.strftime('%d.%m.%Y')
             yield scrapy.Request(url, callback=self.get_day, meta={'cookiejar': i}, headers=self.headers)
 
@@ -96,16 +96,11 @@ class MemberProSpider(scrapy.Spider):
             start_time = act_day + datetime.timedelta(hours=hour, minutes=minutes)
             end_time = start_time + datetime.timedelta(minutes=self.reservation_length)
             item = ReservationScraperItem()
-            item['start_time'] = str(start_time)
-            item['end_time'] = str(end_time)
-            item['court_number'] = court_num
-            item['fk_sport_center'] = self.sport_center_guid
+            item['start_time'] = start_time
+            item['end_time'] = end_time
+            item['court_id'] = court_num
+            item['facility_id'] = self.host
             yield item
-
-    @classmethod
-    def get_month_days(cls):
-        return [datetime.date.today() + datetime.timedelta(days=x) for x in range(cls.day_count)]
-
 
 
 

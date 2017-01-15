@@ -12,7 +12,3 @@ class JehniceSpider(BizzySpider):
             self.reservation_system_host,
             self.additional_ajax_apyload
         )
-
-
-        
-            

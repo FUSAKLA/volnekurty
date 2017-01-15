@@ -9,10 +9,10 @@
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'reservation_scraper'
+BOT_NAME = 'facility_information_scraper'
 
-SPIDER_MODULES = ['reservation_scraper.spiders']
-NEWSPIDER_MODULE = 'reservation_scraper.spiders'
+SPIDER_MODULES = ['facility_information_scraper.spiders']
+NEWSPIDER_MODULE = 'facility_information_scraper.spiders'
 
 
 
@@ -29,12 +29,16 @@ CONCURRENT_REQUESTS=320
 # See also autothrottle settings and docs
 #DOWNLOAD_DELAY=3
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN=16
+CONCURRENT_REQUESTS_PER_DOMAIN=30
 #CONCURRENT_REQUESTS_PER_IP=16
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED=False
 COOKIES_DEBUG=True
+
+MEMDEBUG_ENABLED=True
+
+MEMUSAGE_ENABLED=True
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED=False
@@ -67,7 +71,7 @@ COOKIES_DEBUG=True
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'reservation_scraper.pipelines.ReservationScraperPipeline': 300,
+    'facility_information_scraper.pipelines.FacilityInformationScraperPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

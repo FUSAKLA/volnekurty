@@ -1,39 +1,31 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Feb 12 18:46:46 2016
-
-@author: FUSAKLA
-"""
-
 import datetime
 
 import scrapy
-
 from reservation_scraper.items import ReservationScraperItem
-#from reservation_scraper.db_worker import db_worker
-
-headers = {
-    'Host': 'www.clubclassic.cz'
-}
+from reservation_scraper.db_driver.mongo import MongoDriver
+from reservation_scraper.utils import date_utils
+from config import config
 
 
 class ClassicSpider(scrapy.Spider):
     name = "classic"
-    allowed_domains = ['clubclassic.cz']
+    host = 'clubclassic.cz'
+
+    allowed_domains = [host]
+
+    day_count_to_scrape = int(config["TimeInterval"]["DayCountToScrape"])
+
     start_urls = [
         "http://rezervace.clubclassic.cz/index.php?page=day_overview&id=29"
     ]
-
-    def __init__(self):
-        self.sport_center_guid = None
+    headers = {
+        'Host': 'www.clubclassic.cz'
+    }
 
     def parse(self, response):
-        #self.sport_center_guid = db_worker.get_center_guid(headers['Host'])
-        #db_worker.remove_center_reservations(self.sport_center_guid)
-        #db_worker.update_center_last_edited(self.sport_center_guid)
-        dates = self.get_month_days()
-        for d in dates:
-            url = response.urljoin('?page=day_overview&id=29&date=' + str(d))
+        MongoDriver.delete_all_future_facility_reservations(self.host)
+        for d in date_utils.get_days_set(self.day_count_to_scrape):
+            url = response.urljoin('?page=day_overview&id=29&date=' + str(d.date()))
             yield scrapy.Request(url, callback=self.parse_day)
 
     def parse_day(self, response):
@@ -46,15 +38,11 @@ class ClassicSpider(scrapy.Spider):
             for c_num, c in enumerate(cells):
                 if c.xpath('@class').extract_first() == 'obsazeno':
                     item = ReservationScraperItem()
-                    item['start_time'] = str(start_datetime)
-                    item['end_time'] = str(end_datetime)
-                    item['court_number'] = c_num + 1
-                    item['fk_sport_center'] = self.sport_center_guid
+                    item['start_time'] = start_datetime
+                    item['end_time'] = end_datetime
+                    item['court_id'] = c_num + 1
+                    item['facility_id'] = self.host
                     yield item
-
-    @staticmethod
-    def get_month_days():
-        return [datetime.date.today() + datetime.timedelta(days=x) for x in range(30)]
 
     @staticmethod
     def get_border_times(act_date, time_string):
