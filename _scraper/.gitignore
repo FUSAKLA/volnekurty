@@ -1,6 +1,3 @@
 *.json
 *.html
-*.egg
 *.pyc
-build/
-*.idea
